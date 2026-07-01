@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Giám Sát Vườn Cây Đầu Dòng – Sơn La 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;600&display=swap');
+
+  :root {
+    --forest-dark:   #091b15;
+    --forest-mid:    #113123;
+    --forest-green:  #1d4d38;
+    --leaf:          #319795;
+    --mint:          #4fd1c5;
+    --pale:          #e6fffa;
+    --accent-gold:   #ecc94b;
+    --accent-red:    #f56565;
+    --accent-amber:  #ed8936;
+    --bg-card:       #0f3425;
+    --bg-panel:      #133e2d;
+    --text-main:     #f7fafc;
+    --text-dim:      #9ae6b4;
+    --text-muted:    #4a7c64;
+    --border:        #1e533c;
+    --shadow:        0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--forest-dark);
+    color: var(--text-main);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ─────────────────────────────── */
+  .header {
+    background: linear-gradient(135deg, #091b15 0%, #113123 60%, #1d4d38 100%);
+    border-bottom: 2px solid var(--leaf);
+    padding: 18px 32px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: var(--forest-green);
+    border: 2px solid var(--leaf);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .header-title { line-height: 1.2; }
+  .header-title h1 {
+    font-size: 18px; font-weight: 800;
+    color: var(--mint);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .header-title p { font-size: 12px; color: var(--text-dim); font-weight: 400; }
+  .header-meta {
+    display: flex; gap: 20px; align-items: center;
+  }
+  .header-badge {
+    background: var(--forest-green);
+    border: 1px solid var(--leaf);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 11px; font-weight: 600;
+    color: var(--mint);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .pulse-dot {
+    width: 10px; height: 10px;
+    background: var(--mint);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 0 var(--mint);
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(79,209,197,0.7); }
+    70%  { box-shadow: 0 0 0 8px rgba(79,209,197,0); }
+    100% { box-shadow: 0 0 0 0 rgba(79,209,197,0); }
+  }
+  .live-label { font-size: 11px; color: var(--mint); font-weight: 600; letter-spacing: 0.05em; }
+
+  /* ── SCENARIO BAR ────────────────────────── */
+  .scenario-bar {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 32px;
+    display: flex; align-items: center; gap: 24px;
+    flex-wrap: wrap;
+  }
+  .scenario-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .scenario-title { font-size: 13px; font-weight: 700; color: var(--mint); }
+  .sep { width: 1px; height: 20px; background: var(--border); }
+  .scenario-tag {
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    background: rgba(79,209,197,0.15);
+    border: 1px solid var(--leaf);
+    color: var(--mint);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* ── LAYOUT ──────────────────────────────── */
+  .main { padding: 20px 32px 40px; max-width: 1600px; }
+
+  /* ── KPI CARDS ───────────────────────────── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.green::before  { background: linear-gradient(90deg, var(--forest-green), var(--leaf)); }
+  .kpi-card.gold::before   { background: linear-gradient(90deg, #b5692a, var(--accent-gold)); }
+  .kpi-card.amber::before  { background: linear-gradient(90deg, #b89800, var(--accent-amber)); }
+  .kpi-card.red::before    { background: linear-gradient(90deg, #8b1c24, var(--accent-red)); }
+  .kpi-card.mint::before   { background: linear-gradient(90deg, #1b6e50, var(--mint)); }
+  .kpi-card:hover { border-color: var(--leaf); }
+
+  .kpi-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .kpi-value {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 26px; font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-value.green  { color: var(--leaf); }
+  .kpi-value.gold   { color: var(--accent-gold); }
+  .kpi-value.amber  { color: var(--accent-amber); }
+  .kpi-value.red    { color: var(--accent-red); }
+  .kpi-value.mint   { color: var(--mint); }
+
+  .kpi-sub { font-size: 11px; color: var(--text-dim); }
+  .kpi-target {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 8px;
+  }
+  .kpi-progress-bg {
+    flex: 1; height: 4px;
+    background: var(--border);
+    border-radius: 2px; overflow: hidden;
+  }
+  .kpi-progress-fill {
+    height: 100%; border-radius: 2px;
+    transition: width 1s ease;
+  }
+  .kpi-target-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+  /* ── WARNING BANNER ──────────────────────── */
+  .warning-banner {
+    background: rgba(245,101,101,0.1);
+    border: 1px solid rgba(245,101,101,0.4);
+    border-left: 4px solid var(--accent-red);
+    border-radius: 8px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .warning-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .warning-content h4 { font-size: 13px; font-weight: 700; color: var(--accent-red); margin-bottom: 4px; }
+  .warning-content p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .warning-items { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+  .w-item {
+    background: rgba(245,101,101,0.15);
+    border: 1px solid rgba(245,101,101,0.3);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px; color: #ff9a9a; font-weight: 600;
+  }
+
+  /* ── CHARTS GRID ─────────────────────────── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-size: 13px; font-weight: 700; color: var(--mint); display: flex; align-items: center; gap: 8px; }
+  .panel-icon { font-size: 15px; }
+  .panel-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .panel-body { padding: 14px 18px; }
+
+  .badge-pill {
+    font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 10px;
+    color: var(--forest-dark);
+  }
+  .badge-green  { background: var(--mint); }
+  .badge-amber  { background: var(--accent-amber); }
+  .badge-red    { background: var(--accent-red); }
+
+  /* ── TABLE ───────────────────────────────── */
+  .search-row {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+  }
+  .search-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text-main);
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 12px;
+    width: 280px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--leaf); }
+  .filter-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text-dim);
+    font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn.active { background: var(--forest-green); border-color: var(--leaf); color: var(--mint); }
+  .filter-btn:hover { border-color: var(--leaf); color: var(--text-main); }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  .data-table thead th:hover { color: var(--mint); }
+  .data-table tbody tr {
+    border-bottom: 1px solid rgba(30,74,48,0.5);
+    transition: background 0.15s;
+  }
+  .data-table tbody tr:hover { background: rgba(45,106,79,0.15); }
+  .data-table td { padding: 9px 14px; color: var(--text-main); }
+  .td-num { font-family: 'Roboto Mono', monospace; font-size: 12px; text-align: right; }
+  .td-name { font-weight: 600; }
+
+  .ty-le-bar {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ty-le-track {
+    flex: 1; height: 6px;
+    background: var(--border);
+    border-radius: 3px; overflow: hidden;
+  }
+  .ty-le-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+  .ty-le-text {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    width: 46px; text-align: right; flex-shrink: 0;
+  }
+
+  .section-title {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 20px 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  .table-wrap { max-height: 440px; overflow-y: auto; }
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .footer strong { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-icon">🌱</div>
+    <div class="header-title">
+      <h1>Hệ thống Giám sát Cơ sở dữ liệu Vườn cây đầu dòng</h1>
+      <p>Sở Nông nghiệp & Phát triển Nông thôn tỉnh Sơn La &nbsp;|&nbsp; Kịch bản IOC số 02 &nbsp;|&nbsp; CSDL Chuẩn năm 2026</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span class="header-badge">QLNN – Chi cục Trồng trọt & BVTV</span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="pulse-dot"></div>
+      <span class="live-label">Hệ thống Live</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCENARIO BAR -->
+<div class="scenario-bar">
+  <span class="scenario-label">Kịch bản điều hành</span>
+  <span class="scenario-title">KB-02: Theo dõi, quản lý cơ sở dữ liệu vườn cây đầu dòng & kiểm soát vật liệu nhân giống tối đa hàng năm</span>
+  <div class="sep"></div>
+  <span class="scenario-tag">Trồng trọt</span>
+  <span class="scenario-tag">IOC Sơn La</span>
+  <span class="scenario-tag">Hạn mức khai thác</span>
+</div>
+
+<div class="main">
+
+<!-- ── KPI CARDS ── -->
+<div class="kpi-row">
+  <div class="kpi-card mint">
+    <div class="kpi-label">Tổng số vườn đầu dòng đạt chuẩn</div>
+    <div class="kpi-value mint">30 vườn</div>
+    <div class="kpi-sub">100% đã được cấp mã hiệu quốc gia</div>
+    <div class="kpi-target">
+      <div class="kpi-progress-bg"><div class="kpi-progress-fill" style="width:100%;background:var(--mint)"></div></div>
+      <span class="kpi-target-label">Đang hiệu lực</span>
+    </div>
+  </div>
+
+  <div class="kpi-card green">
+    <div class="kpi-label">Tổng diện tích nguồn giống</div>
+    <div class="kpi-value green">298.300 m²</div>
+    <div class="kpi-sub">Phân bổ vùng giống sạch bệnh cấp xã</div>
+    <div class="kpi-target">
+      <div class="kpi-progress-bg"><div class="kpi-progress-fill" style="width:85%;background:var(--leaf)"></div></div>
+      <span class="kpi-target-label">Bảo tồn chuẩn</span>
+    </div>
+  </div>
+
+  <div class="kpi-card gold">
+    <div class="kpi-label">Tổng số lượng cây mẹ</div>
+    <div class="kpi-value gold">72.449 cây</div>
+    <div class="kpi-sub">Gắn mã định danh giám sát năng suất sinh học</div>
+    <div class="kpi-target">
+      <div class="kpi-progress-bg"><div class="kpi-progress-fill" style="width:90%;background:var(--accent-gold)"></div></div>
+      <span class="kpi-target-label">Sinh trưởng tốt</span>
+    </div>
+  </div>
+
+  <div class="kpi-card red">
+    <div class="kpi-label">Vườn nguy cơ vượt định mức khai thác</div>
+    <div class="kpi-value red" id="dangerCount">0 vườn</div>
+    <div class="kpi-sub">Tỷ lệ lũy kế tiến sát hoặc vượt 100% hạn mức</div>
+    <div class="kpi-target">
+      <div class="kpi-progress-bg"><div class="kpi-progress-fill" id="dangerFill" style="width:0%;background:var(--accent-red)"></div></div>
+      <span class="kpi-target-label">Cần can thiệp khẩn</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIST CẢNH BÁO (ALERT LIST) ── -->
+<div class="warning-banner" id="alertBanner" style="display:none;">
+  <div class="warning-icon">⚠️</div>
+  <div class="warning-content">
+    <h4>DANH SÁCH CẢNH BÁO (ALERT LIST) – Các vườn cây đầu dòng có tỷ lệ khai thác lũy kế ở mức nguy cơ cao (&gt;= 90%)</h4>
+    <p>Yêu cầu Chi cục Trồng trọt và Bảo vệ Thực vật lập đoàn hậu kiểm thực địa, đình chỉ hoặc điều tiết hạn mức để tránh làm kiệt quệ hệ thống cây mẹ.</p>
+    <div class="warning-items" id="alertItems"></div>
+  </div>
+</div>
+
+<!-- ── CHARTS PANEL ── -->
+<div class="section-title">📊 Biểu đồ trực quan hóa dữ liệu hạn mức nguồn giống</div>
+<div class="charts-grid">
+  <!-- Bar chart - Horizontal bar showing top species by limitation -->
+  <div class="panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title"><span class="panel-icon">📊</span> Tổng mức vật liệu nhân giống tối đa hàng năm theo loài cây</div>
+        <div class="panel-subtitle">Đơn vị tính: mắt ghép / cành / kg hạt giống cho phép khai thác/năm</div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <canvas id="horizontalBarChart" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- Instruction/Formula side panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><span class="panel-icon">🧮</span> Thuật toán & Cách tính số liệu AI</div>
+    </div>
+    <div class="panel-body" style="font-size:12.5px; line-height:1.7;">
+      <p class="bold" style="color:var(--mint); margin-bottom:10px;">Chỉ số giám sát chuỗi cung ứng:</p>
+      <div style="background:rgba(79,209,197,0.05); border:1px solid var(--border); padding:12px; border-radius:6px; font-family:'Roboto Mono', monospace; margin-bottom:12px;">
+        <span class="bold" style="color:var(--accent-gold);">Tỷ lệ khai thác lũy kế:</span><br>
+        = (Lượng mắt ghép thực tế ÷ Hạn mức phê duyệt) × 100%
+      </div>
+      <p style="color:var(--text-dim);">Hệ thống tự động đồng bộ số liệu hóa đơn, tem chứng nhận đầu ra của từng lô giống để cộng dồn theo thời gian thực trong năm.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── DETAIL TABLE ── -->
+<div class="section-title">📋 Cơ sở dữ liệu chi tiết hệ thống vườn cây đầu dòng tỉnh Sơn La</div>
+<div class="panel">
+  <div class="search-row">
+    <input class="search-input" id="tableSearch" type="text" placeholder="🔍  Tìm loài cây, mã hiệu, chủ nguồn giống...">
+    <button class="filter-btn active" onclick="filterTable('all', this)">Tất cả vườn</button>
+    <button class="filter-btn" onclick="filterTable('high', this)">Khai thác cao (≥85%)</button>
+    <button class="filter-btn" onclick="filterTable('normal', this)">An toàn (&lt;85%)</button>
+    <span style="font-size:11px; color:var(--text-muted); margin-left:auto" id="rowCountText"></span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>TT</th>
+          <th>Loài cây / Tên giống</th>
+          <th>Mã hiệu nguồn giống</th>
+          <th class="td-num">Diện tích (m²)</th>
+          <th class="td-num">Số cây mẹ</th>
+          <th class="td-num">Hạn mức/Năm</th>
+          <th style="min-width:180px">Tỷ lệ khai thác lũy kế</th>
+          <th>Chủ nguồn giống</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  <span>📦 Nguồn: Phụ lục II – Cơ sở dữ liệu nguồn giống cây trồng tỉnh Sơn La năm 2026 &nbsp;|&nbsp; <strong>Chi cục Trồng trọt và BVTV</strong></span>
+  <span>Mẫu kịch bản điều hành phục vụ cuộc thi IOC &nbsp;|&nbsp; Mã hiệu kịch bản <strong>KB-02</strong></span>
+</div>
+
+<script>
+const RAW_DATA = [
+  {
+    "stt": 1,
+    "loai_cay": "Nhãn chín muộn PH-M99-1.1",
+    "ten_giang": "Nhãn chín muộn PH-M99-1.1",
+    "ma_hieu": "V. NHAN CHIN MUON PH-M99-1.1 .14.125.04123.15.09",
+    "quyet_dinh": "401/QĐ-SNN ngày 24/12/2015",
+    "dien_tich": 6000,
+    "so_luong_cay": 123,
+    "han_muc": 61500,
+    "luong_thuc_te": 39975,
+    "ty_le": 65.0,
+    "chu_nguon": "Hợp tác xã Dịch vụ nông nghiệp nhãn chín muộn",
+    "dia_chi": "Xã Chiềng Mung, tỉnh Sơn La"
+  },
+  {
+    "stt": 2,
+    "loai_cay": "Xoài GL4",
+    "ten_giang": "Xoài GL4",
+    "ma_hieu": "V. XOÀI GL4.14.124.04078.21.01",
+    "quyet_dinh": "63/QĐ-SNN ngày 26/02/2021",
+    "dien_tich": 20000,
+    "so_luong_cay": 1587,
+    "han_muc": 1142640,
+    "luong_thuc_te": 1005523,
+    "ty_le": 88.0,
+    "chu_nguon": "Công ty Cổ phần Giống rau hoa quả Trung ương",
+    "dia_chi": "Xã Chiềng Hặc, tỉnh Sơn La"
+  },
+  {
+    "stt": 3,
+    "loai_cay": "Xoài GL4",
+    "ten_giang": "Xoài GL4",
+    "ma_hieu": "V. XOÀI GL4.14.124.04123.18.02",
+    "quyet_dinh": "301/QĐ-SNN ngày 08/11/2018",
+    "dien_tich": 5000,
+    "so_luong_cay": 180,
+    "han_muc": 32000,
+    "luong_thuc_te": 20800,
+    "ty_le": 65.0,
+    "chu_nguon": "Hợp tác xã dịch vụ nông nghiệp tổng hợp Trường Tiến",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 4,
+    "loai_cay": "Mít Siêu Sớm TL1",
+    "ten_giang": "Mít Siêu Sớm TL1",
+    "ma_hieu": "V. MÍT SIÊU SỚM TL1.14.125.04123.23.01",
+    "quyet_dinh": "260/QĐ-SNN ngày 13/06/2023",
+    "dien_tich": 10000,
+    "so_luong_cay": 2000,
+    "han_muc": 800000,
+    "luong_thuc_te": 704000,
+    "ty_le": 88.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 5,
+    "loai_cay": "Mít Ruột Đỏ IĐ1",
+    "ten_giang": "Mít Ruột Đỏ IĐ1",
+    "ma_hieu": "V. MÍT RUỘT ĐỎ IĐ1.14.125.04123.23.02",
+    "quyet_dinh": "261/QĐ-SNN ngày 13/06/2023",
+    "dien_tich": 8550,
+    "so_luong_cay": 1710,
+    "han_muc": 684000,
+    "luong_thuc_te": 656640,
+    "ty_le": 96.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 6,
+    "loai_cay": "Mận vàng AFLI",
+    "ten_giang": "Mận vàng AFLI",
+    "ma_hieu": "V. MẬN VÀNG AFLI.14.127.04123.23.03",
+    "quyet_dinh": "349/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 1400,
+    "so_luong_cay": 110,
+    "han_muc": 110000,
+    "luong_thuc_te": 105600,
+    "ty_le": 96.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 7,
+    "loai_cay": "Mận Tam Hoa",
+    "ten_giang": "Mận Tam Hoa",
+    "ma_hieu": "V. MẬN TAM HOA.14.127.04123.23.04",
+    "quyet_dinh": "350/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 1500,
+    "so_luong_cay": 250,
+    "han_muc": 250000,
+    "luong_thuc_te": 162500,
+    "ty_le": 65.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 8,
+    "loai_cay": "Lê VH6",
+    "ten_giang": "Lê VH6",
+    "ma_hieu": "V. LÊ VH6.14.129.04123.23.05",
+    "quyet_dinh": "351/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 5000,
+    "so_luong_cay": 400,
+    "han_muc": 1200000,
+    "luong_thuc_te": 1056000,
+    "ty_le": 88.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 9,
+    "loai_cay": "Hồng xiêm QX-1",
+    "ten_giang": "Hồng xiêm QX-1",
+    "ma_hieu": "V. HỒNG XIÊM QX-1.14.133.04123.23.06",
+    "quyet_dinh": "352/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 1500,
+    "so_luong_cay": 80,
+    "han_muc": 80000,
+    "luong_thuc_te": 52000,
+    "ty_le": 65.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 10,
+    "loai_cay": "Na Hoàng hậu",
+    "ten_giang": "Na Hoàng hậu",
+    "ma_hieu": "V. NA HOÀNG HẬU.14.130.04123.23.07",
+    "quyet_dinh": "353/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 2500,
+    "so_luong_cay": 250,
+    "han_muc": 250000,
+    "luong_thuc_te": 162500,
+    "ty_le": 65.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 11,
+    "loai_cay": "Na Hoàng Hậu 1301",
+    "ten_giang": "Na Hoàng Hậu 1301",
+    "ma_hieu": "V. NA HOÀNG HẬU 1301.14.130.04123.23.08",
+    "quyet_dinh": "354/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 3000,
+    "so_luong_cay": 300,
+    "han_muc": 300000,
+    "luong_thuc_te": 195000,
+    "ty_le": 65.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  },
+  {
+    "stt": 12,
+    "loai_cay": "Na SR-1",
+    "ten_giang": "Na SR-1",
+    "ma_hieu": "V. NA SR-1.14.130.04123.23.09",
+    "quyet_dinh": "355/QĐ-SNN ngày 10/08/2023",
+    "dien_tich": 1500,
+    "so_luong_cay": 150,
+    "han_muc": 105000,
+    "luong_thuc_te": 682500,
+    "ty_le": 65.0,
+    "chu_nguon": "Công ty TNHH nông lâm nghiệp Sơn La",
+    "dia_chi": "Xã Chiềng Ban, tỉnh Sơn La"
+  }
+];
+
+// 1. Process Chart Data
+const speciesMap = {};
+RAW_DATA.forEach(r => {
+  if(!speciesMap[r.loai_cay]) speciesMap[r.loai_cay] = 0;
+  speciesMap[r.loai_cay] += r.han_muc;
+});
+const sortedSpecies = Object.keys(speciesMap).map(k => ({name: k, total: speciesMap[k]})).sort((a,b) => b.total - a.total).slice(0, 8);
+
+// 2. Compute alerts & thresholds dynamic
+const alertList = RAW_DATA.filter(r => r.ty_le >= 90);
+const dangerCountEl = document.getElementById('dangerCount');
+dangerCountEl.textContent = alertList.length + ' vườn';
+document.getElementById('dangerFill').style.width = (alertList.length / RAW_DATA.length * 100) + '%';
+
+if(alertList.length > 0) {
+  document.getElementById('alertBanner').style.display = 'flex';
+  const alertItemsEl = document.getElementById('alertItems');
+  alertList.forEach(r => {
+    const item = document.createElement('span');
+    item.className = 'w-item';
+    item.textContent = `${r.loai_cay} [Mã: ${r.ma_hieu.substring(0,15)}...] - Lũy kế: ${r.ty_le}%`;
+    alertItemsEl.appendChild(item);
+  });
+}
+
+// 3. Render Table
+let currentFilter = 'all';
+function renderTableData(data) {
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('rowCountText').textContent = `Hiển thị ${data.length} / ${RAW_DATA.length} nguồn giống`;
+  
+  tbody.innerHTML = data.map(r => {
+    let color = '#4fd1c5'; 
+    if(r.ty_le >= 90) color = '#f56565'; 
+    else if(r.ty_le >= 80) color = '#ed8936'; 
+    
+    return `
+      <tr>
+        <td class="td-num">${r.stt}</td>
+        <td>
+          <div class="td-name">${r.loai_cay}</div>
+          <div style="font-size:10.5px; color:var(--text-muted); margin-top:2px;">${r.quyet_dinh}</div>
+        </td>
+        <td style="font-family:'Roboto Mono', monospace; font-size:11px; color:var(--text-dim);">${r.ma_hieu}</td>
+        <td class="td-num">${r.dien_tich.toLocaleString('vi-VN')}</td>
+        <td class="td-num">${r.so_luong_cay.toLocaleString('vi-VN')}</td>
+        <td class="td-num" style="font-weight:600; color:var(--text-dim);">${r.han_muc.toLocaleString('vi-VN')}</td>
+        <td>
+          <div class="ty-le-bar">
+            <div class="ty-le-track">
+              <div class="ty-le-fill" style="width:${r.ty_le}%; background:${color}"></div>
+            </div>
+            <span class="ty-le-text" style="color:${color}">${r.ty_le.toFixed(1)}%</span>
+          </div>
+        </td>
+        <td>
+          <div style="font-weight:500; color:var(--text-main);">${r.chu_nguon}</div>
+          <div style="font-size:11px; color:var(--text-muted);">${r.dia_chi}</div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterTable(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = type;
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById('tableSearch').value.toLowerCase();
+  let filtered = RAW_DATA.filter(r => 
+    r.loai_cay.toLowerCase().includes(q) || 
+    r.ma_hieu.toLowerCase().includes(q) || 
+    r.chu_nguon.toLowerCase().includes(q)
+  );
+  
+  if (currentFilter === 'high') filtered = filtered.filter(r => r.ty_le >= 85);
+  if (currentFilter === 'normal') filtered = filtered.filter(r => r.ty_le < 85);
+  
+  renderTableData(filtered);
+}
+
+document.getElementById('tableSearch').addEventListener('input', applyFilters);
+
+// Render horizontal bar chart using Chart.js
+new Chart(document.getElementById('horizontalBarChart'), {
+  type: 'bar',
+  data: {
+    labels: sortedSpecies.map(s => s.name),
+    datasets: [{
+      label: 'Hạn mức vật liệu tối đa (đơn vị/năm)',
+      data: sortedSpecies.map(s => s.total),
+      backgroundColor: 'rgba(79, 209, 197, 0.8)',
+      borderColor: '#4fd1c5',
+      borderWidth: 1,
+      borderRadius: 4
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#091b15',
+        borderColor: '#4fd1c5',
+        borderWidth: 1,
+        titleColor: '#4fd1c5',
+        bodyColor: '#9ae6b4'
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: '#1e533c' },
+        ticks: { color: '#4a7c64', font: { size: 10 } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { color: '#9ae6b4', font: { size: 11, weight: '600' } }
+      }
+    }
+  }
+});
+
+// Initial load
+renderTableData(RAW_DATA);
+</script>
+</body>
+</html>
